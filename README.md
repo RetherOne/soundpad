@@ -1,6 +1,6 @@
-# SoundBoard — Virtual Microphone Soundboard
+# SoundPad— Virtual Microphone Soundboard
 
-Soundboard с горячими клавишами: подмешивает звуки к вашему микрофону в реальном времени.
+SoundPad с горячими клавишами: подмешивает звуки к вашему микрофону в реальном времени.
 Собеседник в Discord/Zoom/TeamSpeak слышит и вас, и звуки одновременно.
 
 ---
