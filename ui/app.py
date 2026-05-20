@@ -8,6 +8,7 @@ from ui.dialogs.device_dialog import DeviceDialog
 from ui.dialogs.slot_editor import SlotEditor
 from ui.styles import (
     ACCENT,
+    ACCENT_HOVER,
     BG,
     BG3,
     BORDER,
@@ -95,13 +96,17 @@ class App(tk.Tk):
 
         self._start_btn = tk.Button(
             ctrl,
-            text="▶  СТАРТ",
+            text="▶ START",
             bg=ACCENT,
-            fg="#000",
-            font=FONT_BIG,
+            fg="white",
+            activebackground=ACCENT_HOVER,
+            activeforeground="white",
             relief="flat",
+            bd=0,
+            font=FONT_BIG,
             padx=14,
-            command=self._toggle_stream,
+            pady=8,
+            cursor="hand2",
         )
         self._start_btn.pack(side="left", padx=4)
 

@@ -1,7 +1,10 @@
 import json
 import os
 
-CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".soundboard_config.json")
+CONFIG_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    ".soundboard_config.json",
+)
 SOUNDS_DIR = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sounds"
 )

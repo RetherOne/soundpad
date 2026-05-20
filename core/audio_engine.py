@@ -40,6 +40,7 @@ class AudioEngine:
         self._stream_monitor = None
 
         self._mic_queue = queue.Queue(maxsize=8)
+        self._mic_monitor_q = queue.Queue(maxsize=8)  # для sidetone
         self._sfx_monitor_q = queue.Queue(maxsize=64)
 
     @property
@@ -67,10 +68,7 @@ class AudioEngine:
         _, outputs = AudioEngine.list_devices()
 
         for idx, name in outputs:
-            if (
-                "cable input" in name.lower()
-                or "vb-audio" in name.lower()
-            ):
+            if "cable input" in name.lower() or "vb-audio" in name.lower():
                 return idx
 
         return None
@@ -108,6 +106,18 @@ class AudioEngine:
 
         self._stream_in.start()
         self._stream_out.start()
+
+        if self.monitor_device is not None:
+            self._stream_monitor = sd.OutputStream(
+                device=self.monitor_device,
+                channels=self.CHANNELS,
+                samplerate=self.SAMPLERATE,
+                blocksize=self.BLOCKSIZE,
+                dtype="float32",
+                latency="low",
+                callback=self._monitor_cb,
+            )
+            self._stream_monitor.start()
 
     def stop(self):
         self.running = False
@@ -147,6 +157,17 @@ class AudioEngine:
         except queue.Full:
             pass
 
+        # Дублируем для sidetone в мониторе
+        if self._mic_monitor_q.full():
+            try:
+                self._mic_monitor_q.get_nowait()
+            except queue.Empty:
+                pass
+        try:
+            self._mic_monitor_q.put_nowait(chunk.copy())
+        except queue.Full:
+            pass
+
     def _output_cb(self, outdata, frames, time, status):
         try:
             mic = self._mic_queue.get_nowait()
@@ -183,7 +204,31 @@ class AudioEngine:
                 chunk = data[pos:end].copy()
                 self._sfx_pos = end
 
+            # Дублируем в монитор (наушники)
+            try:
+                self._sfx_monitor_q.put_nowait(chunk.copy())
+            except queue.Full:
+                pass
+
             return chunk
+
+    def _monitor_cb(self, outdata, frames, time, status):
+        """Наушники: SFX всегда + голос только если sidetone включён."""
+        try:
+            sfx = self._sfx_monitor_q.get_nowait()
+        except queue.Empty:
+            sfx = np.zeros(frames, dtype=np.float32)
+
+        if self.sidetone:
+            try:
+                mic = self._mic_monitor_q.get_nowait()
+            except queue.Empty:
+                mic = np.zeros(frames, dtype=np.float32)
+            mixed = mic + sfx * self.sfx_volume
+        else:
+            mixed = sfx * self.sfx_volume
+
+        outdata[:, 0] = np.tanh(mixed)
 
     def sfx_load_and_play(self, filepath):
         thread = threading.Thread(
@@ -194,31 +239,19 @@ class AudioEngine:
 
         thread.start()
 
-    def _load_worker(self, filepath):
+    def _load_worker(self, filepath: str):
         try:
-            data, sr = sf.read(
-                filepath,
-                dtype="float32",
-                always_2d=False,
-            )
+            with open(filepath, "rb") as fobj:
+                data, sr = sf.read(fobj, dtype="float32", always_2d=False)
         except Exception as e:
-            print(f"[SFX] Read error: {e}")
+            print(f"[SFX] Ошибка чтения: {e}")
             return
-
         if data.ndim == 2:
             data = data.mean(axis=1)
-
         if sr != self.SAMPLERATE:
-            new_len = int(
-                len(data) * self.SAMPLERATE / sr
-            )
-
+            new_len = int(len(data) * self.SAMPLERATE / sr)
             data = np.interp(
-                np.linspace(
-                    0,
-                    len(data) - 1,
-                    new_len,
-                ),
+                np.linspace(0, len(data) - 1, new_len),
                 np.arange(len(data)),
                 data,
             ).astype(np.float32)
