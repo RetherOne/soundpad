@@ -16,7 +16,7 @@ Soundboard с горячими клавишами: подмешивает зву
 ### 2. Python и зависимости
 
 ```bash
-pip install sounddevice soundfile numpy pygame
+pip install -r requirements.txt
 ```
 
 > Python 3.8+ обязателен. Скачать: https://python.org
