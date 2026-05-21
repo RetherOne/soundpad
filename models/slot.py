@@ -6,4 +6,6 @@ class Slot:
     label: str = ""
     file: str = ""
     hotkey: str = ""
-    color: str = "#2a2a2a"
+    color: str = "#1e2030"
+    volume: float = 1.0
+    favorite: bool = False

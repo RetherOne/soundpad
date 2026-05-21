@@ -12,7 +12,6 @@ AUDIO_EXTS = {".mp3", ".wav", ".ogg", ".flac", ".aac", ".m4a"}
 
 
 def scan_sounds_dir() -> list[dict]:
-    """Вернуть список слотов для аудиофайлов из папки sounds (по алфавиту)."""
     if not os.path.isdir(SOUNDS_DIR):
         return []
     files = sorted(
@@ -27,7 +26,9 @@ def scan_sounds_dir() -> list[dict]:
                 "label": os.path.splitext(fname)[0],
                 "file": os.path.join(SOUNDS_DIR, fname),
                 "hotkey": "",
-                "color": "#1a2a1a",
+                "color": "#1e2030",
+                "volume": 1.0,
+                "favorite": False,
             }
         )
     return slots
@@ -38,7 +39,9 @@ def load_config():
         "label": "",
         "file": "",
         "hotkey": "",
-        "color": "#2a2a2a",
+        "color": "#1e2030",
+        "volume": 1.0,
+        "favorite": False,
     }
     default = {
         "mic_device": None,
@@ -49,13 +52,12 @@ def load_config():
         "slots": [empty_slot() for _ in range(24)],
     }
 
-    # Автозаполнение из папки sounds (только незанятые слоты)
     def _autofill_from_sounds(slots: list[dict]) -> list[dict]:
         sound_slots = scan_sounds_dir()
         result = list(slots)
         sound_iter = iter(sound_slots)
         for i, slot in enumerate(result):
-            if not slot.get("file"):  # слот пустой — заполняем
+            if not slot.get("file"):
                 try:
                     auto = next(sound_iter)
                     result[i] = auto

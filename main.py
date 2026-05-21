@@ -1,5 +1,15 @@
-from ui.app import App
+import sys
 
+from PySide6.QtWidgets import QApplication
 
-if __name__ == "__main__":
-    App().mainloop()
+from ui.main_window import MainWindow
+from ui.styles import APP_STYLE
+
+app = QApplication(sys.argv)
+
+app.setStyleSheet(APP_STYLE)
+
+window = MainWindow()
+window.show()
+
+sys.exit(app.exec())
